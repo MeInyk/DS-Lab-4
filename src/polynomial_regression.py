@@ -16,9 +16,16 @@ def read_csv(file_path: str) -> pd.DataFrame:
     Returns:
     pd.DataFrame: Loaded data.
     """
+    
     data = pd.read_csv(file_path)
+
     if data.empty:
         raise ValueError("The CSV file is empty.")
+
+    required_columns = ["Size", "Price"]
+    if not all(column in data.columns for column in required_columns):
+        raise ValueError("The CSV file must contain 'Size' and 'Price' columns.")
+
     return data
 
 
@@ -35,7 +42,17 @@ def train_polynomial_regression(X: np.array, y: np.array, degree: int):
     tuple: Trained model and polynomial feature transformer.
     """
 
+    
+    X = np.asarray(X).reshape(-1, 1)
+
+    poly = PolynomialFeatures(degree=degree)
+    X_poly = poly.fit_transform(X)
+
+    model = LinearRegression()
+    model.fit(X_poly, y)
+
     return model, poly
+
 
 
 def predict_prices(model: LinearRegression, poly: PolynomialFeatures, X: np.array):
@@ -50,6 +67,10 @@ def predict_prices(model: LinearRegression, poly: PolynomialFeatures, X: np.arra
     Returns:
     np.array: Predicted prices.
     """
+
+    
+    X = np.asarray(X).reshape(-1, 1)
+    X_poly = poly.transform(X)
 
     return model.predict(X_poly)
 
@@ -66,7 +87,13 @@ def evaluate_model(y_true: np.array, y_pred: np.array):
     dict: Evaluation metrics.
     """
 
+    
+    mae = mean_absolute_error(y_true, y_pred)
+    mse = mean_squared_error(y_true, y_pred)
+    rmse = np.sqrt(mse)
+
     return {"MAE": mae, "MSE": mse, "RMSE": rmse}
+
 
 
 def visualize_data(X: np.array, y: np.array, model: LinearRegression, poly: PolynomialFeatures):
@@ -79,15 +106,21 @@ def visualize_data(X: np.array, y: np.array, model: LinearRegression, poly: Poly
     model (LinearRegression): Trained polynomial regression model.
     poly (PolynomialFeatures): Polynomial feature transformer.
     """
+    
+    X = np.asarray(X).reshape(-1, 1)
+    
     X_plot = np.linspace(X.min(), X.max(), 100)
     y_plot = predict_prices(model, poly, X_plot)
 
+
+    plt.figure(figsize=(8, 6))
     plt.scatter(X, y, color="blue", label="Actual Prices")
     plt.plot(X_plot, y_plot, color="red", label="Polynomial Regression Fit")
     plt.xlabel("House Size")
     plt.ylabel("House Price")
     plt.title("Polynomial Regression: House Size vs Price")
     plt.legend()
+    plt.grid(True)
     plt.show()
 
 
